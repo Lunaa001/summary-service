@@ -40,7 +40,7 @@ class TestSummaryService:
         service = SummaryService()  # No AI service
         
         with pytest.raises(RuntimeError, match="AIService not initialized"):
-            service.generate_summary("some text")
+            service.generate_summary("some text", documento_id=1)
     
     def test_generate_summary_empty_text(self):
         """Test generate_summary raises error for empty text"""
@@ -48,7 +48,7 @@ class TestSummaryService:
         service = SummaryService(ai_service=ai_service)
         
         with pytest.raises(ValueError, match="cannot be empty"):
-            service.generate_summary("")
+            service.generate_summary("", documento_id=1)
     
     @patch('app.services.ai_service.requests.post')
     def test_generate_summary_with_mocked_ai(self, mock_post):
@@ -72,10 +72,11 @@ class TestSummaryService:
         service = SummaryService(ai_service=ai_service)
         
         test_text = "Python is a programming language. " * 20
-        summary = service.generate_summary(test_text, max_tokens=100)
+        summary = service.generate_summary(test_text, documento_id=1, max_tokens=100)
         
         assert summary is not None
-        assert "mocked" in summary.lower() or "summary" in summary.lower()
+        assert isinstance(summary, dict)
+        assert "resumen" in summary
     
     @patch('app.services.ai_service.requests.post')
     def test_generate_summary_ai_error(self, mock_post):
@@ -88,7 +89,7 @@ class TestSummaryService:
         test_text = "Test document text " * 20
         
         with pytest.raises(Exception):
-            service.generate_summary(test_text)
+            service.generate_summary(test_text, documento_id=1)
 
 
 @pytest.mark.skip(reason="Requires running database and Gemma4 API")
@@ -98,6 +99,20 @@ class TestDocumentSummaryIntegration:
     def test_generate_summary_for_document(self):
         """Test generating summary for uploaded document"""
         # This test requires:
+        # 1. PostgreSQL running
+        # 2. Valid Gemma4 API key
+        # 3. Pre-existing document in database
+        pass
+    
+    def test_summary_stored_in_database(self):
+        """Test that summaries are stored in database"""
+        # Requires database setup
+        pass
+    
+    def test_summary_endpoint_http_response(self):
+        """Test HTTP endpoint returns correct response"""
+        # Requires running server
+        pass
         # 1. Running PostgreSQL
         # 2. Running Gemma4 API with valid credentials
         # 3. Pre-uploaded document

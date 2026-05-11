@@ -27,7 +27,7 @@ class TestSummaryServiceFASE5(unittest.TestCase):
         service = SummaryService()  # No AI service
         
         with self.assertRaises(RuntimeError) as context:
-            service.generate_summary("Test text")
+            service.generate_summary("Test text", documento_id=1)
         
         self.assertIn("AIService not initialized", str(context.exception))
     
@@ -37,7 +37,7 @@ class TestSummaryServiceFASE5(unittest.TestCase):
         service = SummaryService(ai_service=ai_service)
         
         with self.assertRaises(ValueError) as context:
-            service.generate_summary("")
+            service.generate_summary("", documento_id=1)
         
         self.assertIn("cannot be empty", str(context.exception))
     
@@ -82,10 +82,11 @@ class TestSummaryServiceFASE5(unittest.TestCase):
         service = SummaryService(ai_service=ai_service)
         
         test_text = "Python is a great language. " * 10
-        summary = service.generate_summary(test_text, max_tokens=100)
+        summary = service.generate_summary(test_text, documento_id=1, max_tokens=100)
         
         self.assertIsNotNone(summary)
-        self.assertIsInstance(summary, str)
+        self.assertIsInstance(summary, dict)
+        self.assertIn("documento_id", summary)
 
 
 if __name__ == "__main__":
