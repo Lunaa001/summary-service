@@ -1,6 +1,5 @@
 """Configuration settings for Summary Service"""
 
-import os
 from pydantic_settings import BaseSettings
 from pydantic import ConfigDict
 
@@ -15,29 +14,33 @@ class Settings(BaseSettings):
     )
     
     # Database
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL",
-        "postgresql://postgres:postgres@postgres:5432/summary_service"
-    )
+    DATABASE_URL: str = "postgresql://postgres:postgres@postgres:5432/summary_service"
     
     # AI Service
-    MODEL_API_KEY: str = os.getenv("MODEL_API_KEY", "")
-    MODEL_API_BASE_URL: str = os.getenv(
-        "MODEL_API_BASE_URL",
-        "https://ai.cloud.um.edu.ar/api/v1"
-    )
-    IA_MODEL: str = os.getenv("IA_MODEL", "gemma4-26b-16g")
+    MODEL_API_KEY: str = ""
+    MODEL_API_BASE_URL: str = "https://ai.cloud.um.edu.ar/api/v1"
+    IA_MODEL: str = "gemma4-26b-16g"
+    AI_CONNECT_TIMEOUT_SECONDS: int = 10
+    AI_REQUEST_TIMEOUT_SECONDS: int = 30
+    AI_HEALTHCHECK_TIMEOUT_SECONDS: int = 5
     
     # Summary settings
     DEFAULT_MAX_TOKENS: int = 300
     MIN_TEXT_LENGTH: int = 100
     
     # Service ports and hosts
-    HOST: str = os.getenv("HOST", "0.0.0.0")
-    PORT: int = int(os.getenv("PORT", "8002"))
+    HOST: str = "0.0.0.0"
+    PORT: int = 8002
     
     # Logging
-    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
+    LOG_LEVEL: str = "INFO"
+
+    # Database pool
+    DB_POOL_SIZE: int = 5
+    DB_MAX_OVERFLOW: int = 10
+    
+    # Healthcheck behavior
+    HEALTHCHECK_AI: bool = False
 
 
 settings = Settings()

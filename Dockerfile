@@ -43,7 +43,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Exponer puerto
-EXPOSE 8000
+EXPOSE 8002
 
 # Comando por defecto (sin --reload)
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8002"]

@@ -45,7 +45,7 @@ class SummaryDetailResponse(BaseModel):
 # ============================================================================
 
 @summaries_router.post("/generate", response_model=SummaryResponse, status_code=status.HTTP_201_CREATED)
-async def generate_summary(
+def generate_summary(
     request: SummaryGenerationRequest,
     session: Session = Depends(get_session)
 ):
@@ -119,12 +119,10 @@ async def generate_summary(
                 "documento_id": request.documento_id,
             }
         )
-    finally:
-        session.close()
 
 
 @summaries_router.get("/document/{documento_id}", response_model=SummaryResponse)
-async def get_document_summary(
+def get_document_summary(
     documento_id: int,
     session: Session = Depends(get_session)
 ):
@@ -178,12 +176,10 @@ async def get_document_summary(
                 "documento_id": documento_id,
             }
         )
-    finally:
-        session.close()
 
 
 @summaries_router.get("/{summary_id}", response_model=SummaryResponse)
-async def get_summary_by_id(
+def get_summary_by_id(
     summary_id: int,
     session: Session = Depends(get_session)
 ):
@@ -233,19 +229,3 @@ async def get_summary_by_id(
                 "message": "Error retrieving summary",
             }
         )
-    finally:
-        session.close()
-
-
-@summaries_router.get("/health", response_model=SummaryResponse)
-async def health_check():
-    """
-    Health check endpoint
-    
-    Returns:
-        SummaryResponse indicating service is healthy
-    """
-    return SummaryResponse(
-        success=True,
-        message="Summary service is healthy"
-    )

@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import SQLAlchemyError, OperationalError
 from app.models.base import Base
@@ -15,8 +15,8 @@ engine = create_engine(
     settings.DATABASE_URL,
     echo=False,
     pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
+    pool_size=settings.DB_POOL_SIZE,
+    max_overflow=settings.DB_MAX_OVERFLOW,
 )
 
 # Create session factory
@@ -54,7 +54,7 @@ async def init_db(max_retries: int = 5, retry_delay: int = 2):
             
             # Verify connectivity - fail fast if PostgreSQL is unreachable
             with engine.connect() as conn:
-                conn.execute("SELECT 1")
+                conn.execute(text("SELECT 1"))
             
             # Initialize schema
             Base.metadata.create_all(bind=engine)
@@ -87,6 +87,12 @@ async def init_db(max_retries: int = 5, retry_delay: int = 2):
                 f"This is likely a code issue, not a connection problem."
             )
             raise
+
+
+def check_db() -> None:
+    """Lightweight database connectivity check"""
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
 
 
 def get_session() -> Session:

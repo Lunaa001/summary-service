@@ -35,12 +35,16 @@ pip install -r requirements.txt
 pdm install
 ```
 
-3. Create `.env` file:
+3. Create `.env` file (see `.env.example`):
 ```
-DATABASE_URL=postgresql://user:password@localhost:5432/summary_service
-GEMMA4_API_KEY=your_api_key_here
-GEMMA4_API_BASE_URL=https://ai.cloud.um.edu.ar/api/v1
-GEMMA4_MODEL=gemma4-26b-16g
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=summary_service
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/summary_service
+MODEL_API_KEY=your_api_key_here
+MODEL_API_BASE_URL=https://ai.cloud.um.edu.ar/api/v1
+IA_MODEL=gemma4-26b-16g
+HOST=0.0.0.0
 PORT=8002
 LOG_LEVEL=INFO
 ```
@@ -57,6 +61,14 @@ python main.py
 # or with uvicorn:
 uvicorn main:app --host 0.0.0.0 --port 8002 --reload
 ```
+
+### Docker Compose
+
+```bash
+docker compose up --build
+```
+
+Other services can reach this microservice at `http://app:8002` inside the Compose network.
 
 ## API Endpoints
 

@@ -7,11 +7,12 @@ from __future__ import annotations
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.database import init_db
+from app.database import init_db, check_db
+from app.services.ai_service import AIService
 from app.routers import router
 from config import settings
 
@@ -78,12 +79,49 @@ async def request_validation_exception_handler(
 
 # Health check endpoint
 @app.get("/health")
-async def health_check():
+async def health_check(deep: bool = False):
     """Service health check"""
+    components = {
+        "database": "unknown",
+        "ai": "skipped",
+    }
+    
+    try:
+        check_db()
+        components["database"] = "ok"
+    except Exception:
+        components["database"] = "error"
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "status": "unhealthy",
+                "service": "Summary Service",
+                "version": "1.0.0",
+                "components": components,
+            },
+        )
+    
+    if deep or settings.HEALTHCHECK_AI:
+        try:
+            AIService().test_connection()
+            components["ai"] = "ok"
+        except Exception:
+            components["ai"] = "error"
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "status": "degraded",
+                    "service": "Summary Service",
+                    "version": "1.0.0",
+                    "components": components,
+                },
+            )
+    
     return {
         "status": "healthy",
         "service": "Summary Service",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "components": components,
     }
 
 

@@ -86,7 +86,10 @@ RESUMEN:"""
                     "temperature": 0.7,
                     "max_tokens": max_tokens
                 },
-                timeout=30
+                timeout=(
+                    settings.AI_CONNECT_TIMEOUT_SECONDS,
+                    settings.AI_REQUEST_TIMEOUT_SECONDS,
+                )
             )
             
             if response.status_code != 200:
@@ -154,7 +157,10 @@ RESUMEN:"""
                     ],
                     "max_tokens": 10
                 },
-                timeout=10
+                timeout=(
+                    settings.AI_CONNECT_TIMEOUT_SECONDS,
+                    settings.AI_HEALTHCHECK_TIMEOUT_SECONDS,
+                )
             )
             
             return response.status_code == 200
