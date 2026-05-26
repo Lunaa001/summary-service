@@ -25,15 +25,20 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Manage application lifecycle - startup and shutdown
+    Manage application lifecycle - startup and shutdown.
+    
+    If database initialization fails, the application will not start.
+    This ensures the app never runs without a valid database connection.
     """
     # Startup
     logger.info("Starting Summary Service...")
     try:
-        init_db()
-        logger.info("Database initialized successfully")
+        await init_db()
+        logger.info("✓ Database initialized and ready")
     except Exception as e:
-        logger.error(f"Failed to initialize database: {e}")
+        # Don't catch the exception - let it propagate to prevent app startup
+        logger.critical("✗ Failed to initialize database. Application cannot start.")
+        raise
     
     yield
     

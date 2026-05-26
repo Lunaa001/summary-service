@@ -17,16 +17,16 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
-        "postgresql://postgres:postgres@localhost:5432/summary_service"
+        "postgresql://postgres:postgres@postgres:5432/summary_service"
     )
     
     # AI Service
-    GEMMA4_API_KEY: str = os.getenv("GEMMA4_API_KEY", "")
-    GEMMA4_API_BASE_URL: str = os.getenv(
-        "GEMMA4_API_BASE_URL",
+    MODEL_API_KEY: str = os.getenv("MODEL_API_KEY", "")
+    MODEL_API_BASE_URL: str = os.getenv(
+        "MODEL_API_BASE_URL",
         "https://ai.cloud.um.edu.ar/api/v1"
     )
-    GEMMA4_MODEL: str = os.getenv("GEMMA4_MODEL", "gemma4-26b-16g")
+    IA_MODEL: str = os.getenv("IA_MODEL", "gemma4-26b-16g")
     
     # Summary settings
     DEFAULT_MAX_TOKENS: int = 300

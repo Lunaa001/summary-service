@@ -2,8 +2,8 @@
 
 import requests
 from typing import Optional
-import os
 import logging
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -11,18 +11,16 @@ logger = logging.getLogger(__name__)
 class AIService:
     """Service for calling UM Gemma4 API for summarization"""
     
-    # UM AI Cloud configuration
-    API_BASE_URL = "https://ai.cloud.um.edu.ar/api/v1"
-    MODEL = "gemma4-26b-16g"
-    
     def __init__(self, api_key: Optional[str] = None):
         """
         Initialize AI Service with API key
         
         Args:
-            api_key: UM AI API key (or from env variable GEMMA4_API_KEY)
+            api_key: UM AI API key (optional, defaults to settings.MODEL_API_KEY)
         """
-        self.api_key = api_key or os.getenv("GEMMA4_API_KEY")
+        self.api_key = api_key or settings.MODEL_API_KEY
+        self.api_base_url = settings.MODEL_API_BASE_URL
+        self.model = settings.IA_MODEL
     
     def generate_summary(self, text: str, max_tokens: int = 200) -> str:
         """
@@ -39,7 +37,7 @@ class AIService:
             ValueError: If API call fails or no API key available
         """
         if not self.api_key:
-            raise ValueError("GEMMA4_API_KEY not provided or found in environment")
+            raise ValueError("MODEL_API_KEY not provided or found in environment")
         
         if not text or text.strip() == "":
             raise ValueError("Text to summarize cannot be empty")
@@ -75,13 +73,13 @@ RESUMEN:"""
         
         try:
             response = requests.post(
-                f"{self.API_BASE_URL}/chat/completions",
+                f"{self.api_base_url}/chat/completions",
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": self.MODEL,
+                    "model": self.model,
                     "messages": [
                         {"role": "user", "content": prompt}
                     ],
@@ -128,7 +126,7 @@ RESUMEN:"""
             ValueError: If connection fails or no API key available
         """
         if not self.api_key:
-            raise ValueError("GEMMA4_API_KEY not provided or found in environment")
+            raise ValueError("MODEL_API_KEY not provided or found in environment")
         
         return self._test_connection_api()
     
@@ -144,13 +142,13 @@ RESUMEN:"""
         """
         try:
             response = requests.post(
-                f"{self.API_BASE_URL}/chat/completions",
+                f"{self.api_base_url}/chat/completions",
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": self.MODEL,
+                    "model": self.model,
                     "messages": [
                         {"role": "user", "content": "Hola"}
                     ],

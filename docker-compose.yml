@@ -1,42 +1,24 @@
-version: '3.8'
-
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: summary_service_db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: summary_service
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+ # servicios separados y lis microservios por cada lado scar de la linea 2 a las 16, llevarlo en otro lugar 
 
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: summary_service
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/summary_service
-      GEMMA4_API_KEY: ${GEMMA4_API_KEY}
-      GEMMA4_API_BASE_URL: https://ai.cloud.um.edu.ar/api/v1
-      GEMMA4_MODEL: gemma4-26b-16g
-      HOST: 0.0.0.0
-      PORT: 8002
-      LOG_LEVEL: INFO
-    ports:
-      - "8002:8002"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    command: uvicorn main:app --host 0.0.0.0 --port 8002 --reload
+      DATABASE_URL: ${DATABASE_URL}
+      MODEL_API_KEY: ${MODEL_API_KEY}
+      MODEL_API_BASE_URL: ${MODEL_API_BASE_URL}
+      IA_MODEL: ${IA_MODEL}
+      HOST: ${HOST}
+      PORT: ${PORT}
+      LOG_LEVEL: ${LOG_LEVEL}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 5s
+      retries: 3
 
 volumes:
   postgres_data:
