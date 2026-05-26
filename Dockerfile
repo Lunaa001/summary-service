@@ -37,12 +37,13 @@ ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
+# Instalar curl para healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Exponer puerto
-EXPOSE 5000
+EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:5000/docs')" || exit 1
-
-# Comando por defecto
-CMD ["uvicorn", "src.app:app", "--host", "0.0.0.0", "--port", "5000"]
+# Comando por defecto (sin --reload)
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
