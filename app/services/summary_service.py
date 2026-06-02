@@ -116,7 +116,7 @@ class SummaryService:
             texto_original=texto_original,
             resumen=resumen,
             longitud_resumen=len(resumen),
-            modelo=settings.IA_MODEL,
+            modelo=settings.GROQ_MODEL,
         )
         self.db_session.add(summary_record)
         self.db_session.commit()

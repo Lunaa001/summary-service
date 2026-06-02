@@ -60,34 +60,29 @@ class TestSummaryServiceFASE5(unittest.TestCase):
         result = service.should_generate_summary(None)
         self.assertFalse(result)
     
-    @patch('app.services.ai_service.requests.post')
-    def test_generate_summary_with_mocked_api(self, mock_post):
-        """Test generate_summary calls AI service correctly"""
-        # Mock API response
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "choices": [
-                {
-                    "message": {
-                        "content": "Generated summary text",
-                        "reasoning": ""
-                    }
-                }
-            ]
-        }
-        mock_post.return_value = mock_response
-        
-        ai_service = AIService(api_key="test-key")
-        service = SummaryService(ai_service=ai_service)
-        
-        test_text = "Python is a great language. " * 10
-        summary = service.generate_summary(test_text, documento_id=1, max_tokens=100)
-        
-        self.assertIsNotNone(summary)
-        self.assertIsInstance(summary, dict)
-        self.assertIn("documento_id", summary)
+@patch.object(AIService, "generate_summary")
+def test_generate_summary_with_mocked_api(self, mock_generate):
+    """Test generate_summary calls AI service correctly"""
 
+    mock_generate.return_value = "Generated summary text"
+
+    ai_service = MagicMock(spec=AIService)
+    ai_service.generate_summary.return_value = "Generated summary text"
+
+    service = SummaryService(ai_service=ai_service)
+
+    test_text = "Python is a great language. " * 10
+
+    summary = service.generate_summary(
+        test_text,
+        documento_id=1,
+        max_tokens=100
+    )
+
+    self.assertIsNotNone(summary)
+    self.assertIsInstance(summary, dict)
+    self.assertIn("documento_id", summary)
+    self.assertEqual(summary["documento_id"], 1)
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,12 +2,13 @@
 
 import logging
 from typing import Optional
-from openai import Groq, APIConnectionError, APITimeoutError, RateLimitError
+
+from groq import Groq
+from groq import APIConnectionError, APITimeoutError, RateLimitError
 
 from config import settings
 
 logger = logging.getLogger(__name__)
-
 
 class AIService:
     """Service for calling Groq API (llama-3.3-70b) for summarization"""
@@ -142,13 +143,13 @@ RESUMEN:"""
         
         return self._test_connection_groq()
     
-    def _test_connection_groq(self) -> bool:
-        """
+        def _test_connection_groq(self) -> bool:
+            """
         Internal method to test Groq API connection
-        
+
         Returns:
             True if connection successful
-            
+
         Raises:
             ValueError: If connection fails
         """
@@ -164,41 +165,26 @@ RESUMEN:"""
                 max_tokens=10,
                 timeout=settings.AI_HEALTHCHECK_TIMEOUT_SECONDS
             )
-            
+
             if response.choices and len(response.choices) > 0:
                 logger.info("✓ Groq API connection successful")
                 return True
             else:
                 raise ValueError("Empty response from Groq API")
-                
+
         except APITimeoutError as e:
             logger.error(f"✗ Groq connection timeout: {str(e)}")
             raise ValueError(f"Groq API timeout: {str(e)}")
+
         except APIConnectionError as e:
             logger.error(f"✗ Groq connection failed: {str(e)}")
             raise ValueError(f"Cannot connect to Groq API: {str(e)}")
+
         except RateLimitError as e:
             logger.error(f"✗ Groq rate limit: {str(e)}")
             raise ValueError(f"Groq API rate limit: {str(e)}")
+
         except Exception as e:
             logger.error(f"✗ Groq connection test failed: {str(e)}")
             raise ValueError(f"Connection test failed: {str(e)}")
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": self.model,
-                    "messages": [
-                        {"role": "user", "content": "Hola"}
-                    ],
-                    "max_tokens": 10
-                },
-                timeout=(
-                    settings.AI_CONNECT_TIMEOUT_SECONDS,
-                    settings.AI_HEALTHCHECK_TIMEOUT_SECONDS,
-                )
-            )
-            
-            return response.status_code == 200
         
-        except Exception as e:
-            raise ValueError(f"API connection failed: {str(e)}")

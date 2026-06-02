@@ -3,12 +3,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    env_file: .env
+
+    ports:
+      - "8002:8002"
+
+    env_file:
+      - .env
+
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      MODEL_API_KEY: ${MODEL_API_KEY}
-      MODEL_API_BASE_URL: ${MODEL_API_BASE_URL}
-      IA_MODEL: ${IA_MODEL}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GROQ_MODEL: ${GROQ_MODEL}
       HOST: ${HOST}
       PORT: ${PORT}
       LOG_LEVEL: ${LOG_LEVEL}
