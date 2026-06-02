@@ -64,6 +64,4 @@ poetry.lock
 docs/_build/
 
 # Misc
-README.md
-*.md
 LICENSE
