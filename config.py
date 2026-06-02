@@ -16,10 +16,9 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "postgresql://postgres:postgres@postgres:5432/summary_service"
     
-    # AI Service
-    MODEL_API_KEY: str = ""
-    MODEL_API_BASE_URL: str = "https://ai.cloud.um.edu.ar/api/v1"
-    IA_MODEL: str = "gemma4-26b-16g"
+    # AI Service - Groq Configuration
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
     AI_CONNECT_TIMEOUT_SECONDS: int = 10
     AI_REQUEST_TIMEOUT_SECONDS: int = 30
     AI_HEALTHCHECK_TIMEOUT_SECONDS: int = 5

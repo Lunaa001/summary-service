@@ -1,56 +1,66 @@
-"""Service for AI-powered text summarization using UM Gemma4 API"""
+"""Service for AI-powered text summarization using Groq API with llama-3.3-70b"""
 
-import requests
-from typing import Optional
 import logging
+from typing import Optional
+from openai import Groq, APIConnectionError, APITimeoutError, RateLimitError
+
 from config import settings
 
 logger = logging.getLogger(__name__)
 
 
 class AIService:
-    """Service for calling UM Gemma4 API for summarization"""
+    """Service for calling Groq API (llama-3.3-70b) for summarization"""
     
     def __init__(self, api_key: Optional[str] = None):
         """
-        Initialize AI Service with API key
+        Initialize AI Service with Groq API key
         
         Args:
-            api_key: UM AI API key (optional, defaults to settings.MODEL_API_KEY)
+            api_key: Groq API key (optional, defaults to settings.GROQ_API_KEY)
         """
-        self.api_key = api_key or settings.MODEL_API_KEY
-        self.api_base_url = settings.MODEL_API_BASE_URL
-        self.model = settings.IA_MODEL
+        self.api_key = api_key or settings.GROQ_API_KEY
+        self.model = settings.GROQ_MODEL
+        
+        if not self.api_key:
+            raise ValueError("GROQ_API_KEY not provided or found in environment")
+        
+        # Initialize Groq client
+        self.client = Groq(api_key=self.api_key)
     
-    def generate_summary(self, text: str, max_tokens: int = 200) -> str:
+    def generate_summary(self, text: str, max_tokens: int = 300) -> str:
         """
-        Generate a summary of the provided text using Gemma4
+        Generate a summary of the provided text using Groq (llama-3.3-70b)
         
         Args:
             text: Text to summarize
-            max_tokens: Maximum tokens in the response
+            max_tokens: Maximum tokens in the response (default: 300)
         
         Returns:
             Generated summary
         
         Raises:
-            ValueError: If API call fails or no API key available
+            ValueError: If API call fails or text is empty
+            APIConnectionError: If connection to Groq fails
+            APITimeoutError: If request times out
         """
-        if not self.api_key:
-            raise ValueError("MODEL_API_KEY not provided or found in environment")
-        
         if not text or text.strip() == "":
             raise ValueError("Text to summarize cannot be empty")
         
+        if len(text.strip()) < settings.MIN_TEXT_LENGTH:
+            raise ValueError(
+                f"Text is too short. Minimum length: {settings.MIN_TEXT_LENGTH} characters"
+            )
+        
         try:
-            return self._call_api(text, max_tokens)
+            return self._call_groq_api(text, max_tokens)
         except Exception as e:
             logger.error(f"Failed to generate summary: {str(e)}")
             raise
     
-    def _call_api(self, text: str, max_tokens: int) -> str:
+    def _call_groq_api(self, text: str, max_tokens: int) -> str:
         """
-        Internal method to call Gemma4 API
+        Internal method to call Groq API using llama-3.3-70b
         
         Args:
             text: Text to summarize
@@ -61,10 +71,13 @@ class AIService:
             
         Raises:
             ValueError: If API call fails
+            APIConnectionError: If connection fails
+            APITimeoutError: If request times out
         """
         # Craft the prompt for summarization
         prompt = f"""Genera un resumen conciso y claro del siguiente texto. 
 El resumen debe ser breve pero completo, capturando los puntos principales.
+Sé directo y evita información redundante.
 
 TEXTO A RESUMIR:
 {text}
@@ -72,55 +85,51 @@ TEXTO A RESUMIR:
 RESUMEN:"""
         
         try:
-            response = requests.post(
-                f"{self.api_base_url}/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": self.model,
-                    "messages": [
-                        {"role": "user", "content": prompt}
-                    ],
-                    "temperature": 0.7,
-                    "max_tokens": max_tokens
-                },
-                timeout=(
-                    settings.AI_CONNECT_TIMEOUT_SECONDS,
-                    settings.AI_REQUEST_TIMEOUT_SECONDS,
-                )
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Eres un asistente experto en resumir textos. Genera resúmenes claros, concisos y precisos en español."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                temperature=0.3,  # Lower temperature for more consistent summaries
+                max_tokens=max_tokens,
+                timeout=settings.AI_REQUEST_TIMEOUT_SECONDS
             )
             
-            if response.status_code != 200:
-                raise ValueError(f"API error {response.status_code}: {response.text}")
-            
-            data = response.json()
-            
             # Extract summary from response
-            # Some models use "content", others use "reasoning" for their output
-            if "choices" in data and len(data["choices"]) > 0:
-                choice = data["choices"][0]["message"]
-                # Try content first, then reasoning if content is empty
-                summary = (choice.get("content") or "").strip()
-                if not summary:
-                    summary = (choice.get("reasoning") or "").strip()
+            if response.choices and len(response.choices) > 0:
+                summary = response.choices[0].message.content.strip()
                 
                 if not summary:
-                    raise ValueError("API returned no content or reasoning")
+                    raise ValueError("Groq API returned empty content")
                 
+                logger.info(f"Summary generated successfully ({len(summary)} chars)")
                 return summary
             else:
-                raise ValueError("Unexpected API response format")
+                raise ValueError("Unexpected Groq API response format")
         
-        except requests.exceptions.RequestException as e:
-            raise ValueError(f"Failed to call AI API: {str(e)}")
+        except APITimeoutError as e:
+            logger.error(f"Groq API timeout: {str(e)}")
+            raise ValueError(f"AI service timeout: {str(e)}")
+        except APIConnectionError as e:
+            logger.error(f"Groq connection error: {str(e)}")
+            raise ValueError(f"Failed to connect to AI service: {str(e)}")
+        except RateLimitError as e:
+            logger.error(f"Groq rate limit exceeded: {str(e)}")
+            raise ValueError(f"AI service rate limit exceeded: {str(e)}")
         except Exception as e:
+            logger.error(f"Error calling Groq API: {str(e)}")
             raise ValueError(f"Error generating summary: {str(e)}")
     
     def test_connection(self) -> bool:
         """
-        Test if API connection works
+        Test if Groq API connection works
         
         Returns:
             True if connection successful
@@ -129,13 +138,13 @@ RESUMEN:"""
             ValueError: If connection fails or no API key available
         """
         if not self.api_key:
-            raise ValueError("MODEL_API_KEY not provided or found in environment")
+            raise ValueError("GROQ_API_KEY not provided or found in environment")
         
-        return self._test_connection_api()
+        return self._test_connection_groq()
     
-    def _test_connection_api(self) -> bool:
+    def _test_connection_groq(self) -> bool:
         """
-        Internal method to test API connection
+        Internal method to test Groq API connection
         
         Returns:
             True if connection successful
@@ -144,10 +153,36 @@ RESUMEN:"""
             ValueError: If connection fails
         """
         try:
-            response = requests.post(
-                f"{self.api_base_url}/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": "Say 'OK' if you can read this."
+                    }
+                ],
+                max_tokens=10,
+                timeout=settings.AI_HEALTHCHECK_TIMEOUT_SECONDS
+            )
+            
+            if response.choices and len(response.choices) > 0:
+                logger.info("✓ Groq API connection successful")
+                return True
+            else:
+                raise ValueError("Empty response from Groq API")
+                
+        except APITimeoutError as e:
+            logger.error(f"✗ Groq connection timeout: {str(e)}")
+            raise ValueError(f"Groq API timeout: {str(e)}")
+        except APIConnectionError as e:
+            logger.error(f"✗ Groq connection failed: {str(e)}")
+            raise ValueError(f"Cannot connect to Groq API: {str(e)}")
+        except RateLimitError as e:
+            logger.error(f"✗ Groq rate limit: {str(e)}")
+            raise ValueError(f"Groq API rate limit: {str(e)}")
+        except Exception as e:
+            logger.error(f"✗ Groq connection test failed: {str(e)}")
+            raise ValueError(f"Connection test failed: {str(e)}")
                     "Content-Type": "application/json"
                 },
                 json={

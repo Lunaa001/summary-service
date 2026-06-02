@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Summary Service",
     version="1.0.0",
-    description="Microservice for document summarization using AI (Gemma4)",
+    description="Microservice for document summarization using AI (Groq - llama-3.3-70b)",
     lifespan=lifespan,
 )
 

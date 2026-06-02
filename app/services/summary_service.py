@@ -27,7 +27,7 @@ class SummaryService:
     
     def generate_summary(self, document_text: str, documento_id: int, max_tokens: int = None) -> dict:
         """
-        Generate a concise summary of document text using Gemma4 API
+        Generate a concise summary of document text using Groq API (llama-3.3-70b)
         
         Args:
             document_text: Full text extracted from document
