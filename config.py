@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     
     # Service ports and hosts
     HOST: str = "0.0.0.0"
-    PORT: int = 8002
+    PORT: int = 8003
     
     # Logging
     LOG_LEVEL: str = "INFO"

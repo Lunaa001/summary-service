@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.database import init_db, check_db
@@ -53,6 +54,15 @@ app = FastAPI(
     version="1.0.0",
     description="Microservice for document summarization using AI (Groq - llama-3.3-70b)",
     lifespan=lifespan,
+)
+
+# CORS - allow all origins for microservice communication
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include routers
