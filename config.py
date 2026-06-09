@@ -13,33 +13,31 @@ class Settings(BaseSettings):
         extra="ignore",
     )
     
-    # Database
-    DATABASE_URL: str = "postgresql://postgres:postgres@postgres:5432/summary_service"
-    
     # AI Service - Groq Configuration
     GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
     AI_CONNECT_TIMEOUT_SECONDS: int = 10
-    AI_REQUEST_TIMEOUT_SECONDS: int = 30
+    AI_REQUEST_TIMEOUT_SECONDS: int = 60
     AI_HEALTHCHECK_TIMEOUT_SECONDS: int = 5
     
     # Summary settings
-    DEFAULT_MAX_TOKENS: int = 300
+    DEFAULT_MAX_TOKENS: int = 2048
     MIN_TEXT_LENGTH: int = 100
     
     # Service ports and hosts
     HOST: str = "0.0.0.0"
-    PORT: int = 8003
+    PORT: int = 5000
     
     # Logging
     LOG_LEVEL: str = "INFO"
-
-    # Database pool
-    DB_POOL_SIZE: int = 5
-    DB_MAX_OVERFLOW: int = 10
     
     # Healthcheck behavior
     HEALTHCHECK_AI: bool = False
+
+    # Redis (para caché de resúmenes)
+    REDIS_HOST: str = "redis"
+    REDIS_PORT: int = 6379
+    REDIS_PASSWORD: str = ""
 
 
 settings = Settings()

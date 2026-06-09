@@ -1,5 +1,6 @@
 """
 FastAPI application entry point for Summary Service.
+This service ONLY generates summaries — no database required.
 """
 
 from __future__ import annotations
@@ -7,12 +8,11 @@ from __future__ import annotations
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, HTTPException, status
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.database import init_db, check_db
 from app.services.ai_service import AIService
 from app.routers import router
 from config import settings
@@ -28,19 +28,11 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """
     Manage application lifecycle - startup and shutdown.
-    
-    If database initialization fails, the application will not start.
-    This ensures the app never runs without a valid database connection.
+    No database initialization needed — this service only generates summaries.
     """
     # Startup
     logger.info("Starting Summary Service...")
-    try:
-        await init_db()
-        logger.info("✓ Database initialized and ready")
-    except Exception as e:
-        # Don't catch the exception - let it propagate to prevent app startup
-        logger.critical("✗ Failed to initialize database. Application cannot start.")
-        raise
+    logger.info("✓ Summary Service ready (no database required)")
     
     yield
     
@@ -50,9 +42,13 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI application
 app = FastAPI(
-    title="Summary Service",
+    title="Summary Service — NotebookUM",
     version="1.0.0",
-    description="Microservice for document summarization using AI (Groq - llama-3.3-70b)",
+    description=(
+        "Microservice for document summarization using AI (Groq - llama-3.3-70b). "
+        "This service ONLY generates summaries from text. "
+        "It does NOT persist data — persistence is handled by persistence-service."
+    ),
     lifespan=lifespan,
 )
 
@@ -88,28 +84,12 @@ async def request_validation_exception_handler(
 
 
 # Health check endpoint
-@app.get("/health")
+@app.get("/health", tags=["health"])
 async def health_check(deep: bool = False):
     """Service health check"""
     components = {
-        "database": "unknown",
         "ai": "skipped",
     }
-    
-    try:
-        check_db()
-        components["database"] = "ok"
-    except Exception:
-        components["database"] = "error"
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={
-                "status": "unhealthy",
-                "service": "Summary Service",
-                "version": "1.0.0",
-                "components": components,
-            },
-        )
     
     if deep or settings.HEALTHCHECK_AI:
         try:
@@ -117,9 +97,9 @@ async def health_check(deep: bool = False):
             components["ai"] = "ok"
         except Exception:
             components["ai"] = "error"
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail={
+            return JSONResponse(
+                status_code=503,
+                content={
                     "status": "degraded",
                     "service": "Summary Service",
                     "version": "1.0.0",
@@ -135,11 +115,11 @@ async def health_check(deep: bool = False):
     }
 
 
-@app.get("/")
+@app.get("/", tags=["root"])
 async def root():
     """Root endpoint"""
     return {
-        "message": "Summary Service API",
+        "message": "Summary Service API — NotebookUM",
         "version": "1.0.0",
         "docs": "/docs"
     }

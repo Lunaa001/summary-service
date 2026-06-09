@@ -1,8 +1,5 @@
-"""Base model for all ORM models"""
+"""
+DEPRECATED: SQLAlchemy Base is no longer used by Summary Service.
+"""
 
-from sqlalchemy.orm import DeclarativeBase
-
-
-class Base(DeclarativeBase):
-    """Base class for all ORM models"""
-    pass
+# This service no longer uses SQLAlchemy.

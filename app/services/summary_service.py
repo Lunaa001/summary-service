@@ -1,37 +1,35 @@
 """
-Summary Service - Handles document summarization via AI with database persistence
+Summary Service - Handles document summarization via AI.
+This service ONLY generates summaries. It does NOT persist data.
+Persistence is handled by the persistence-service.
 """
 import logging
 from typing import Optional
-from sqlalchemy.orm import Session
 from app.services.ai_service import AIService
-from app.models.summary import Summary
 from config import settings
 
 logger = logging.getLogger(__name__)
 
 
 class SummaryService:
-    """Service for generating and managing document summaries"""
+    """Service for generating document summaries — no database, no persistence"""
     
-    def __init__(self, ai_service: AIService = None, db_session: Session = None):
+    def __init__(self, ai_service: AIService = None):
         """
         Initialize SummaryService
         
         Args:
             ai_service: AIService instance (optional for dependency injection)
-            db_session: Database session (optional for dependency injection)
         """
         self.ai_service = ai_service
-        self.db_session = db_session
     
-    def generate_summary(self, document_text: str, documento_id: int, max_tokens: int = None) -> dict:
+    def generate_summary(self, document_text: str, documento_id: str = None, max_tokens: int = None) -> dict:
         """
         Generate a concise summary of document text using Groq API (llama-3.3-70b)
         
         Args:
             document_text: Full text extracted from document
-            documento_id: ID of the document
+            documento_id: ID of the document (optional, for tracking)
             max_tokens: Maximum tokens for summary (default from config)
             
         Returns:
@@ -58,24 +56,11 @@ class SummaryService:
             )
             logger.info(f"Summary generated: {len(summary_text)} characters")
             
-            # Save to database if session available
-            if self.db_session:
-                summary_record = self._save_summary(
-                    documento_id=documento_id,
-                    texto_original=document_text,
-                    resumen=summary_text
-                )
-                return {
-                    "id": summary_record.id,
-                    "documento_id": summary_record.documento_id,
-                    "resumen": summary_record.resumen,
-                    "longitud_resumen": summary_record.longitud_resumen,
-                }
-            
             return {
-                "documento_id": documento_id,
-                "resumen": summary_text,
+                "document_id": documento_id,
+                "summary": summary_text,
                 "longitud_resumen": len(summary_text),
+                "modelo": settings.GROQ_MODEL,
             }
         except Exception as e:
             logger.error(f"Error generating summary: {str(e)}")
@@ -98,97 +83,3 @@ class SummaryService:
         min_length = min_length or settings.MIN_TEXT_LENGTH
         clean_text = document_text.strip()
         return len(clean_text) >= min_length
-    
-    def _save_summary(self, documento_id: int, texto_original: str, resumen: str) -> Summary:
-        """
-        Save summary to database
-        
-        Args:
-            documento_id: Document ID
-            texto_original: Original document text
-            resumen: Generated summary
-            
-        Returns:
-            Summary record
-        """
-        summary_record = Summary(
-            documento_id=documento_id,
-            texto_original=texto_original,
-            resumen=resumen,
-            longitud_resumen=len(resumen),
-            modelo=settings.GROQ_MODEL,
-        )
-        self.db_session.add(summary_record)
-        self.db_session.commit()
-        self.db_session.refresh(summary_record)
-        return summary_record
-    
-    def get_by_documento_id(self, documento_id: int) -> Optional[dict]:
-        """
-        Get summary by document ID
-        
-        Args:
-            documento_id: Document ID
-            
-        Returns:
-            Summary dictionary or None if not found
-            
-        Raises:
-            RuntimeError: If database session not available
-        """
-        if not self.db_session:
-            raise RuntimeError("Database session not available")
-        
-        try:
-            summary = self.db_session.query(Summary).filter(
-                Summary.documento_id == documento_id
-            ).first()
-            
-            if not summary:
-                raise ValueError(f"Summary not found for document {documento_id}")
-            
-            return {
-                "id": summary.id,
-                "documento_id": summary.documento_id,
-                "resumen": summary.resumen,
-                "longitud_resumen": summary.longitud_resumen,
-                "fecha_creacion": summary.fecha_creacion.isoformat() if summary.fecha_creacion else None,
-            }
-        except Exception as e:
-            logger.error(f"Error retrieving summary: {str(e)}")
-            raise
-    
-    def get_by_id(self, summary_id: int) -> Optional[dict]:
-        """
-        Get summary by ID
-        
-        Args:
-            summary_id: Summary ID
-            
-        Returns:
-            Summary dictionary or None if not found
-            
-        Raises:
-            RuntimeError: If database session not available
-        """
-        if not self.db_session:
-            raise RuntimeError("Database session not available")
-        
-        try:
-            summary = self.db_session.query(Summary).filter(
-                Summary.id == summary_id
-            ).first()
-            
-            if not summary:
-                raise ValueError(f"Summary not found with id {summary_id}")
-            
-            return {
-                "id": summary.id,
-                "documento_id": summary.documento_id,
-                "resumen": summary.resumen,
-                "longitud_resumen": summary.longitud_resumen,
-                "fecha_creacion": summary.fecha_creacion.isoformat() if summary.fecha_creacion else None,
-            }
-        except Exception as e:
-            logger.error(f"Error retrieving summary: {str(e)}")
-            raise

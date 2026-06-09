@@ -1,9 +1,6 @@
-"""Services package"""
+"""Summary Service — services package"""
 
-from .ai_service import AIService
-from .summary_service import SummaryService
+from app.services.ai_service import AIService
+from app.services.summary_service import SummaryService
 
-__all__ = [
-    "AIService",
-    "SummaryService",
-]
+__all__ = ["AIService", "SummaryService"]
