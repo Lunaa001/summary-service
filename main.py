@@ -33,10 +33,25 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting Summary Service...")
     logger.info("✓ Summary Service ready (no database required)")
-    
+
+    # Register with Consul for Service Discovery
+    from app.consul_registration import register_service, deregister_service
+    register_service(
+        service_name="summary-service",
+        service_port=settings.PORT,
+        health_check_path="/health",
+        tags=[
+            "traefik.enable=true",
+            "traefik.http.routers.summary-service.rule=Host(`ai.universidad.localhost`)",
+            "traefik.http.routers.summary-service.entryPoints=http,https",
+            "traefik.http.services.summary-service.loadbalancer.server.port=5000",
+        ],
+    )
+
     yield
-    
-    # Shutdown
+
+    # Shutdown — deregister from Consul
+    deregister_service("summary-service", settings.PORT)
     logger.info("Shutting down Summary Service...")
 
 
