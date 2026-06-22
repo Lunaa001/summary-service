@@ -9,18 +9,10 @@ services:
                 aliases:
                     - ai.universidad.localhost
         environment:
-            - GROQ_API_KEY=${GROQ_API_KEY:-}
-            - GROQ_MODEL=${GROQ_MODEL:-llama-3.3-70b-versatile}
-            - HOST=0.0.0.0
-            - PORT=5000
-            - LOG_LEVEL=INFO
-            - HEALTHCHECK_AI=false
-            - REDIS_HOST=redis
-            - REDIS_PORT=6379
-            - REDIS_PASSWORD=${REDIS_PASSWORD:-}
-            # Consul Service Discovery
+            # Toda la configuración viene de Consul KV
             - CONSUL_HOST=consul
             - CONSUL_PORT=8500
+            - CONSUL_TOKEN=2be22662-4819-4a0c-81d9-b3f50c4c389c
 
 networks:
     notebookum-network:

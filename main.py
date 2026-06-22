@@ -34,18 +34,23 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Summary Service...")
     logger.info("✓ Summary Service ready (no database required)")
 
-    # Register with Consul for Service Discovery
-    from app.consul_registration import register_service, deregister_service
+    # Load config from Consul KV and override settings
+    from app.consul_registration import register_service, deregister_service, fetch_kv_config
+    kv_config = fetch_kv_config("summary-service")
+    if kv_config:
+        for key, value in kv_config.items():
+            if hasattr(settings, key):
+                current = getattr(settings, key)
+                try:
+                    setattr(settings, key, type(current)(value))
+                except (ValueError, TypeError):
+                    setattr(settings, key, value)
+
+    # Register — tags are read from Consul KV automatically (no hardcoded labels)
     register_service(
         service_name="summary-service",
         service_port=settings.PORT,
         health_check_path="/health",
-        tags=[
-            "traefik.enable=true",
-            "traefik.http.routers.summary-service.rule=Host(`ai.universidad.localhost`)",
-            "traefik.http.routers.summary-service.entryPoints=http,https",
-            "traefik.http.services.summary-service.loadbalancer.server.port=5000",
-        ],
     )
 
     yield
