@@ -88,6 +88,14 @@ class AIService:
                 f"Text is too short. Minimum length: {settings.MIN_TEXT_LENGTH} characters"
             )
         
+        # Truncate text to avoid hitting Groq's 12000 TPM limit on the free tier.
+        # 1 token is roughly 4 characters. We limit to 25,000 chars (approx 6000 tokens)
+        # to leave plenty of room for output tokens and the system prompt.
+        max_chars = 25000
+        if len(text) > max_chars:
+            logger.warning(f"Text too long ({len(text)} chars). Truncating to {max_chars} chars.")
+            text = text[:max_chars] + "\n...[Text truncated due to API limits]"
+        
         max_tokens = max_tokens or settings.DEFAULT_MAX_TOKENS
         
         try:
