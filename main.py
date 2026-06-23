@@ -42,7 +42,10 @@ async def lifespan(app: FastAPI):
             if hasattr(settings, key):
                 current = getattr(settings, key)
                 try:
-                    setattr(settings, key, type(current)(value))
+                    if isinstance(current, bool):
+                        setattr(settings, key, str(value).lower() in ("true", "1", "yes", "t"))
+                    else:
+                        setattr(settings, key, type(current)(value))
                 except (ValueError, TypeError):
                     setattr(settings, key, value)
 
